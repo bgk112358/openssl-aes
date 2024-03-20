@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.14.1)
+project(smoking_test)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/inc)
+FILE(GLOB_RECURSE SMOKING_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+
+list(APPEND GLOB_FILES ${FILES} ${SMOKING_SOURCE_FILES})
+message("GLOB_FILES -- " ${GLOB_FILES})
+
+ADD_EXECUTABLE(${PROJECT_NAME} main.cpp ${FILES} ${SMOKING_SOURCE_FILES})

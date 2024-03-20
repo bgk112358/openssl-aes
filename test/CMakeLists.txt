@@ -1,0 +1,61 @@
+# CMakeLists.txt
+cmake_minimum_required(VERSION 3.14.1)
+project(test)
+
+option(ASAN "PRINT ASAN" OFF)
+option(TSAN "PRINT TSAN" OFF)
+option(LCOV "PRINT LCOV" ON)
+
+if(CMAKE_COMPILER_IS_GNUCC)
+    message("COMPILER IS GNUCC")
+        # ADD_DEFINITIONS ( -std=c++14 -std=gnu99)
+endif(CMAKE_COMPILER_IS_GNUCC)
+
+if (ASAN)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=leak -fsanitize-recover=all -fno-omit-frame-pointer -g")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fsanitize=leak -fsanitize-recover=all -fno-omit-frame-pointer -g")
+elseif(TSAN)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread -fsanitize-recover=all -fno-omit-frame-pointer -g")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=thread -fsanitize-recover=all -fno-omit-frame-pointer -g")
+elseif(LCOV)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage -g")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage -g")
+endif()
+
+include(GNUInstallDirs)
+SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+
+message("-- " ${CMAKE_HOST_SYSTEM_NAME})
+message("-- " ${CMAKE_HOST_SYSTEM_PROCESSOR})
+message("-- " ${CMAKE_TOOLCHAIN_FILE})
+
+IF(CMAKE_CROSSCOMPILING)
+    link_directories(${CMAKE_SOURCE_DIR}/gtest/aarch64/usr/local/lib)
+    include_directories(${CMAKE_SOURCE_DIR}/gtest/aarch64/usr/local/include)
+    include_directories(${CMAKE_SOURCE_DIR}/gtest/aarch64/usr/local/include/gtest)
+ELSE()
+    include_directories(${CMAKE_SOURCE_DIR}/../../gtest/googletest/build/include)
+    include_directories(${CMAKE_SOURCE_DIR}/../../gtest/googletest/build/include/gtest)
+    include_directories(${CMAKE_SOURCE_DIR}/../../gtest/googletest/build/include/gmock)
+    link_directories(${CMAKE_SOURCE_DIR}/../../gtest/googletest/build/lib)
+ENDIF()
+
+include_directories(${CMAKE_SOURCE_DIR}/../src)
+
+FILE(GLOB_RECURSE FILES ${CMAKE_SOURCE_DIR}/../src/*.c)
+# FILE(GLOB_RECURSE EX_FILES${CMAKE_SOURCE_DIR}/../src/build/*)
+# list(REMOVE_ITEM GLOB_FILES ${EX_FILES})
+
+if (ASAN)
+    link_libraries(pthread asan.a gtest gmock ssl crypto base64)
+elseif(TSAN)
+    link_libraries(gtest gmock tsan.a pthread ssl crypto base64)
+elseif(LCOV)
+    link_libraries(gtest gmock gcov pthread ssl crypto base64)
+else()
+    link_libraries(gtest gmock pthread ssl crypto base64)
+endif()
+
+ADD_SUBDIRECTORY(${CMAKE_SOURCE_DIR}/smoking)
